@@ -19,6 +19,8 @@ driver.maximize_window()
 
 category = driver.find_element(By.XPATH, "//span[@id='catnav-primary-link-10923']")
 category.click()
+# seller XPATH: //span[@data-ad-label="Ad by Etsy seller"]
+
 # item = driver.find_element(By.XPATH, "searchbox-searchbutton")
 
 
