@@ -25,8 +25,10 @@ pagination = driver.find_elements(By.XPATH, '//span[@class="screen-reader-only"]
 print(f'page len:\t{len(pagination)} | {pagination[3].text}')
 # sellers = driver.find_elements(By.XPATH, "//span[@data-ad-label="Ad by Etsy seller"]")
 items = driver.find_elements(By.XPATH, "//div[@class='wt-height-full']")
-list(map(lambda fit: print(json.loads(str(fit.get_attribute('data-appears-batch-options')))), items))
+items_sub = items
 items = list(filter(lambda fit: json.loads(str(fit.get_attribute('data-appears-batch-options')))['total_items'] > 16, items))
+item_title_list = list(map(lambda fit: {'title': str(fit.find_element(By.TAG_NAME, "a").get_attribute('title')), 'element': fit}, items))
+print(f'\nList:\n--------------------\n{item_title_list}\n--------------------\n')
 print(f'items quota: {len(items)}')
 wanted_product_list = [
     {
@@ -46,7 +48,7 @@ def find_current_page(pagination_element: list):
         cur_page_try = list(filter(lambda fpg: fpg is not None, pag_list))[0]
         cur_p = int(cur_page_try.split("Page ")[1])+1
 
-    return cur_p
+    return cur_p,
 
 
 # Press the green button in the gutter to run the script.
