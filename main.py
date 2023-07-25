@@ -22,12 +22,19 @@ category = driver.find_element(By.XPATH, "//span[@id='catnav-primary-link-10923'
 category.click()
 time.sleep(3)
 pagination = driver.find_elements(By.XPATH, '//span[@class="screen-reader-only"]')
-print(f'page len:\t{len(pagination)} | {pagination[3].text}')
-# sellers = driver.find_elements(By.XPATH, "//span[@data-ad-label="Ad by Etsy seller"]")
+print(f'page len:\t{len(pagination)}')
+# sellers = driver.find_elements(By.XPATH, '//span[@data-ad-label="Ad by Etsy seller"]')
+# sellers = driver.find_elements(By.XPATH, '//span[@class="wt-text-title-small"]')  # big page
+# phrase = 'Personalized camera strap with blue world map design. Comfortable and safe strap - Best gift for photographer. Purple and padded strap'
+# seller_name = 'InTePro'
 items = driver.find_elements(By.XPATH, "//div[@class='wt-height-full']")
 items_sub = items
 items = list(filter(lambda fit: json.loads(str(fit.get_attribute('data-appears-batch-options')))['total_items'] > 16, items))
-item_title_list = list(map(lambda fit: {'title': str(fit.find_element(By.TAG_NAME, "a").get_attribute('title')), 'element': fit}, items))
+item_title_list = list(map(lambda fit: {
+    'title': str(fit.find_element(By.TAG_NAME, "a").get_attribute('title')),
+    'element': fit,
+    'seller': str(fit.find_elements(By.TAG_NAME, "p")[2].get_attribute('textContent'))
+}, items))
 print(f'\nList:\n--------------------\n{item_title_list}\n--------------------\n')
 print(f'items quota: {len(items)}')
 wanted_product_list = [
@@ -54,5 +61,4 @@ def find_current_page(pagination_element: list):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print(f'current page is:\t{find_current_page(pagination_element=pagination)}')
-    time.sleep(3)
     driver.close()
