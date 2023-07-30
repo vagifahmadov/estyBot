@@ -1,3 +1,4 @@
+from flask import Flask, render_template, request, jsonify, json, session
 import time
 from selenium import webdriver
 from selenium.webdriver import Keys
@@ -5,39 +6,16 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
-import json
-from flask import Flask, jsonify
 from waitress import serve
 import json
 
-app = Flask(__name__)
-
-# main variables
-url = "https://www.etsy.com/"
-
-
-def find_current_page(pagination_element: list):
-    try:
-        pag_list = list(
-            map(lambda pg: pagination_element[pagination_element.index(pg) + 1].text if pg.text == 'Current page' else None, pagination_element))
-        cur_page_try = list(filter(lambda fpg: fpg is not None, pag_list))[0]
-        cur_p = int(cur_page_try.split("Page ")[1]) - 1
-    except ValueError:
-        pag_list = list(
-            map(lambda pg: pagination_element[pagination_element.index(pg) - 1].text if pg.text == 'Current page' else None, pagination_element))
-        cur_page_try = list(filter(lambda fpg: fpg is not None, pag_list))[0]
-        cur_p = int(cur_page_try.split("Page ")[1]) + 1
-
-    return cur_p,
+app = Flask(__name__, static_folder='static', template_folder='templates')
+# app.config['UPLOAD_FOLDER'] = upload_folder
+app.secret_key = "etsybot"
 
 
 @app.route('/')
-def bot():
-    return "OK"
-
-
-@app.route('/test')
-def test():
+def home():
     # main variables
     s = Service('./chromedriver/chromedriver')
     url_ws = "https://www.etsy.com/"
@@ -69,12 +47,13 @@ def test():
     print(f'items quota: {len(items)}')
     wanted_product_list = [
         {
-            "data-listing-id": "1264737415"
+            "data-listing-id": "1237180221"
         }
     ]
-    list(map(lambda wl: list(filter), wanted_product_list))
-    return jsonify(item_title_list)
+    list(map(lambda wl: list(map(lambda f: print(f['title']) if f['data-listing-id'] == wl['data-listing-id'] else None, item_title_list)), wanted_product_list))
+
+    return render_template('index.html', data=item_title_list)
 
 
 if __name__ == '__main__':
-    serve(app, host='localhost', port=5000)
+    app.run(debug=True)
