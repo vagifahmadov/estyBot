@@ -44,13 +44,9 @@ def home():
         'data-listing-id': str(fit.find_element(By.TAG_NAME, "a").get_attribute('data-listing-id'))
     }, items))
     print(f'\nList:\n--------------------\n{item_title_list}\n--------------------\n')
+    wanted_product_list = ["398801525"]
     print(f'items quota: {len(items)}')
-    wanted_product_list = [
-        {
-            "data-listing-id": "1237180221"
-        }
-    ]
-    list(map(lambda wl: list(map(lambda f: print(f['title']) if f['data-listing-id'] == wl['data-listing-id'] else None, item_title_list)), wanted_product_list))
+    item_title_list = list(filter(lambda f: f['data-listing-id'] in wanted_product_list, item_title_list))
 
     return render_template('index.html', data=item_title_list)
 
