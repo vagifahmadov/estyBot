@@ -8,50 +8,219 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from waitress import serve
 import json
+from datetime import datetime
+from flask_mysqldb import MySQL
 from helper.methods import *
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # app.config['UPLOAD_FOLDER'] = upload_folder
 app.secret_key = "etsybot"
+# mysql.init_app(app)
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'etsy'
+app.config['MYSQL_PASSWORD'] = '0ze2Qc]zb57YTPCi'
+app.config['MYSQL_DB'] = 'etsy'
+mysql = MySQL(app)
 
 
-@app.route('/')
+@app.route('/', methods=["GET"])
 def home():
     # main variables
-    id_list = ['398801525']
-    result = list(map(lambda id_item: selenium_method(id_item), id_list))
-    # s = Service('./chromedriver/chromedriver')
-    # url_ws = "https://www.etsy.com/"
-    # options = Options()
-    # options.add_experimental_option('detach', True)
-    # driver = webdriver.Chrome(service=s, options=options)
-    # a = ActionChains(driver)
-    # # params
-    # driver.get(url_ws)
-    # driver.maximize_window()
-    #
-    # category = driver.find_element(By.XPATH, "//span[@id='catnav-primary-link-10923']")
-    # category.click()
-    # time.sleep(3)
-    # pagination = driver.find_elements(By.XPATH, '//span[@class="screen-reader-only"]')
-    # print(f'page len:\t{len(pagination)}')
-    # # sellers = driver.find_elements(By.XPATH, '//span[@data-ad-label="Ad by Etsy seller"]')
-    # # sellers = driver.find_elements(By.XPATH, '//span[@class="wt-text-title-small"]')  # big page
-    # # phrase = 'Personalized camera strap with blue world map design. Comfortable and safe strap - Best gift for photographer. Purple and padded strap'
-    # # seller_name = 'InTePro'
-    # items = driver.find_elements(By.XPATH, "//div[@class='wt-height-full']")
-    # items = list(filter(lambda fit: json.loads(str(fit.get_attribute('data-appears-batch-options')))['total_items'] > 16, items))
-    # item_title_list = list(map(lambda fit: {
-    #     'title': str(fit.find_element(By.TAG_NAME, "a").get_attribute('title')),
-    #     # 'element': fit,
-    #     'data-listing-id': str(fit.find_element(By.TAG_NAME, "a").get_attribute('data-listing-id'))
-    # }, items))
-    # print(f'\nList:\n--------------------\n{item_title_list}\n--------------------\n')
-    # wanted_product_list = ["398801525"]
-    # print(f'items quota: {len(items)}')
-    # item_title_list = list(filter(lambda f: f['data-listing-id'] in wanted_product_list, item_title_list))
-    # driver.close()
+    cursor = mysql.connection.cursor()
+    list_id_table_data_sql = """SELECT list_id, search_text FROM `id_list`"""
+    log_table_data_sql = """SELECT list_id, title, found_page, date FROM `products_log`"""
+    proxy_list_sql = """SELECT `ip`, `desc` FROM `proxy_list`"""
+    # TO DO LIST
+    cursor.execute(list_id_table_data_sql)
+    mysql.connection.commit()
+    result_all_datas = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), result_all_datas))
+
+    # id_list = list(map(lambda id_s: str(id_s['list_id']), json_data))
+    # result = json_data
+    data_table = list(map(lambda dt: list(dt.values()), json_data))
+    dt_js = json_data
+    # print(f'jd: {json_data}\t|\tdt: {data_table}')
+    # LOG
+    cursor.execute(log_table_data_sql)
+    mysql.connection.commit()
+    result_log_datas = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), result_log_datas))
+
+    # id_list = list(map(lambda id_s: str(id_s['list_id']), json_data))
+    # result = json_data
+    log_data_table = list(map(lambda dt: list(dt.values()), json_data))
+    lg_js = json_data
+    log_data_table = list(map(lambda dt: list([dt[0], dt[1], dt[2], dt[3].strftime('%d.%m.%Y %M:%H')]), log_data_table))
+    # list(map(lambda dt: print(dt[0:-2], '\t', dt[-1].strftime('%d.%m.%Y %M:%H')), log_data_table))
+
+    # Proxy
+    cursor.execute(proxy_list_sql)
+    mysql.connection.commit()
+    proxy_data_list = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), proxy_data_list))
+
+    # id_list = list(map(lambda id_s: str(id_s['list_id']), json_data))
+    # result = json_data
+    proxy_data_table = list(map(lambda dt: list(dt.values()), json_data))
+    px_js = json_data
+
+    result = {
+        'logTable': log_data_table,
+        'dataTable': data_table,
+        'proxyListData': proxy_data_table,
+        'dtJSON': dt_js,
+        'lgJSON': lg_js,
+        'pxJSON': px_js
+    }
+    cursor.close()
     return render_template('index.html', data=result)
+
+
+@app.route('/run', methods=["POST"])
+def insert_item():
+    # id_element = request.json['id']
+    # category = request.json['category']
+    request_data = request.json
+    # limit = request.args.get('limit')
+    limit = request_data['limit']
+    limit = None if limit == '' else limit
+    # proxy = request.args.get('proxy')
+    proxy = request_data['proxy']
+    proxy = None if proxy == '' else proxy
+    id_list = request_data['idList']
+    count_id = len(id_list)
+    id_list = f"list_id in {tuple(id_list)}" if len(id_list) > 1 else f"list_id={id_list[0]}"
+    print(f'limit: {limit} \t proxy: {proxy} \t idList: {id_list}')
+    cursor = mysql.connection.cursor()
+    cursor.execute(f"""SELECT list_id, search_text FROM `id_list` WHERE {id_list}""")
+    mysql.connection.commit()
+    result_all_datas = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), result_all_datas))
+    result = list(map(lambda item: selenium_method(item['list_id'], item['search_text'], limit, proxy), json_data))
+    result = list(filter(lambda r: r is not None, result))
+    print(f'\n-----------------------------------------\nresult: {result}')
+    if len(result) > 0:
+        sql = """INSERT INTO products_log (list_id, title, found_page, screenshot, search_text, date) VALUES (%s, %s, %s, %s, %s, %s)"""
+        values = list(map(lambda dc: (dc['list_id'], dc['title'], dc['found_page'], dc['screenshot'], dc['search_text'], dc['date']), result))
+        cursor.executemany(sql, values)
+        mysql.connection.commit()
+    cursor.close()
+    result = list(map(lambda r: {'idItem': r['list_id'], 'title': r['title']}, result))
+    # print(result)
+    result = {
+        "message": f'Total logged {len(result)} of {count_id}.' if len(result) > 0 else f'0 logged  of {count_id}',
+        "status": True if len(result) > 0 else False,
+        'title': f'{len(result)} result found' if len(result) > 0 else 'Found nothing'
+    }
+    return result
+
+
+@app.route('/insertItem', methods=["POST"])
+def insert_element():
+    # main variables
+    req = request.json
+    id_item = req["idItem"]
+    search_item = req["search"]
+    print(f'id: {id_item}\tsearch: {search_item}')
+    cursor = mysql.connection.cursor()
+    sql = "INSERT INTO id_list (list_id, search_text) VALUES (%s, %s)"
+    val = (id_item, search_item)
+    cursor.execute(sql, val)
+    mysql.connection.commit()
+    cursor.execute("""SELECT list_id, search_text FROM `id_list`""")
+    mysql.connection.commit()
+    result_all_datas = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), result_all_datas))
+    # id_list = list(map(lambda id_s: str(id_s['id']), json_data))
+    # result = json_data
+    cursor.close()
+    data_table = list(map(lambda dt: list(dt.values()), json_data))
+    print(f'jd: {json_data}\t|\tdt: {data_table}')
+    result = {
+        'dataTable': data_table
+    }
+    return jsonify(result)
+
+
+@app.route('/insertProxy', methods=["POST"])
+def insert_proxy():
+    # main variables
+    req = request.json
+    proxy_ip = req["ip"]
+    desc = req["desc"]
+    cursor = mysql.connection.cursor()
+    sql = "INSERT INTO proxy_list (`ip`, `desc`) VALUES (%s, %s)"
+    val = (proxy_ip, desc)
+    cursor.execute(sql, val)
+    mysql.connection.commit()
+    cursor.execute("""SELECT `ip`, `desc` FROM `proxy_list`""")
+    mysql.connection.commit()
+    result_all_datas = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), result_all_datas))
+    # id_list = list(map(lambda id_s: str(id_s['id']), json_data))
+    # result = json_data
+    cursor.close()
+    proxy_list_data = list(map(lambda dt: list(dt.values()), json_data))
+    print(f'jd: {json_data}\t|\tdt: {proxy_list_data}')
+    result = {
+        'proxyListData': proxy_list_data
+    }
+    return jsonify(result)
+
+
+@app.route('/deleteItem', methods=["POST"])
+def delete_item():
+    # main variables
+    req = request.json
+    id_item = req["idItem"]
+    cursor = mysql.connection.cursor()
+    sql = f"DELETE FROM id_list WHERE list_id = '{id_item}'"
+    cursor.execute(sql)
+    mysql.connection.commit()
+    cursor.execute("""SELECT list_id, search_text FROM `id_list`""")
+    mysql.connection.commit()
+    result_all_datas = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), result_all_datas))
+    # id_list = list(map(lambda id_s: str(id_s['id']), json_data))
+    # result = json_data
+    cursor.close()
+    data_table = list(map(lambda dt: list(dt.values()), json_data))
+    result = {
+        'dataTable': data_table
+    }
+    return jsonify(result)
+
+
+@app.route('/deleteProxy', methods=["POST"])
+def delete_proxy():
+    # main variables
+    req = request.json
+    id_item = req["ip"]
+    cursor = mysql.connection.cursor()
+    sql = f"DELETE FROM proxy_list WHERE `ip` = '{id_item}'"
+    cursor.execute(sql)
+    mysql.connection.commit()
+    cursor.execute("""SELECT `ip`, `desc` FROM `proxy_list`""")
+    mysql.connection.commit()
+    proxy_data_list = cursor.fetchall()
+    row_headers = list(map(lambda x: x[0], cursor.description))
+    json_data = list(map(lambda r: dict(zip(row_headers, r)), proxy_data_list))
+    # id_list = list(map(lambda id_s: str(id_s['id']), json_data))
+    # result = json_data
+    cursor.close()
+    proxy_list_table = list(map(lambda dt: list(dt.values()), json_data))
+    result = {
+        'proxyListData': proxy_list_table
+    }
+    return jsonify(result)
 
 
 if __name__ == '__main__':
