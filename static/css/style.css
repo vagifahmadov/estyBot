@@ -46,6 +46,10 @@ body {
   margin-left: 1%;
   float: left;
 }
+#filerow {
+  clear: left;
+  display: inline-block;
+}
 
 #inputArea {
   margin-bottom: 10px;
