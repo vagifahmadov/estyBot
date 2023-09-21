@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 from flask_mysqldb import MySQL
 from helper.methods import *
+import pandas as pd
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # app.config['UPLOAD_FOLDER'] = upload_folder
@@ -220,6 +221,38 @@ def delete_proxy():
     result = {
         'proxyListData': proxy_list_table
     }
+    return jsonify(result)
+
+
+# /importExel
+@app.route('/importExel', methods=["POST"])
+def import_exel():
+    # main variables
+    req = request.json
+    file_upload = req['uploadfile']
+    file_upload.replace("\\/", "/").encode().decode('unicode_escape')
+    print('\n\n\npath:\n', file_upload, '\n\n\n')
+    df = pd.read_excel(file_upload, sheet_name='Sheet1')
+    print(df)
+
+    result = {'data': req['uploadfile']}
+    # id_item = req["ip"]
+    # cursor = mysql.connection.cursor()
+    # sql = f"DELETE FROM proxy_list WHERE `ip` = '{id_item}'"
+    # cursor.execute(sql)
+    # mysql.connection.commit()
+    # cursor.execute("""SELECT `ip`, `desc` FROM `proxy_list`""")
+    # mysql.connection.commit()
+    # proxy_data_list = cursor.fetchall()
+    # row_headers = list(map(lambda x: x[0], cursor.description))
+    # json_data = list(map(lambda r: dict(zip(row_headers, r)), proxy_data_list))
+    # # id_list = list(map(lambda id_s: str(id_s['id']), json_data))
+    # # result = json_data
+    # cursor.close()
+    # proxy_list_table = list(map(lambda dt: list(dt.values()), json_data))
+    # result = {
+    #     'proxyListData': proxy_list_table
+    # }
     return jsonify(result)
 
 

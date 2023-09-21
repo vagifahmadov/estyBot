@@ -25,6 +25,7 @@ body {
 }
 .logList {
   width: 58%;
+<<<<<<< HEAD
 }
 
 .proxyList {
@@ -79,4 +80,65 @@ body {
 #run {
   width: 100%;
   height: auto;
+=======
+}
+
+.proxyList {
+  width: 40%;
+}
+
+.box {
+  background-color: rgb(240, 237, 228, 0.7);
+  /* border: 1px solid #000; */
+  border-radius: 14px;
+  padding: 10px;
+  float: left;
+  margin-right: 1%;
+  margin-top: 10px;
+}
+
+#search, #listId, #proxyIpInput, #descInput {
+  width: 36%;
+  margin-left: 1%;
+  float: left;
+}
+
+#inputArea {
+  margin-bottom: 10px;
+  margin-top: 10px;
+  display: flex;
+}
+
+#buttonAdd, #delete {
+  float: left;
+  margin-left: 1%;
+}
+
+#listIdSelect {
+  height: 100px;
+}
+
+.dash {
+  width: 96%;
+  margin-top: 10px;
+}
+
+.secDash {
+  float: left;
+  width: 50%;
+}
+
+#run {
+  width: 100%;
+  height: auto;
+}
+
+#upload {
+  width: 85% !important;
+  display: inline;
+}
+
+#uploadBtn {
+  display: inline-block;
+>>>>>>> a2fbb80 (19.09.2023)
 }
