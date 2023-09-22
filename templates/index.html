@@ -369,35 +369,45 @@
     });
 
     function uploadExel(){
-        var uploadButton = document.getElementById("upload");
-        console.log("upload:\t", uploadButton.value)
-        if(uploadButton.value === ''){
+        const fileInput = document.getElementById("upload");
+        
+        console.log("upload:\t", fileInput.value)
+        if(fileInput.value === ''){
             //if empty
-            uploadButton.setAttribute("class", "form-control is-invalid");
+            fileInput.setAttribute("class", "form-control is-invalid");
         }else{
             //if not empty
             var allowedExtensions = /(\.xls|\.xlsx)$/i;
              
-            if (!allowedExtensions.exec(uploadButton.value)) {
-                uploadButton.setAttribute("class", "form-control is-invalid");
+            if (!allowedExtensions.exec(fileInput.value)) {
+                fileInput.setAttribute("class", "form-control is-invalid");
             }else{
-                uploadButton.setAttribute("class", "form-control form-control-sm");
-                let xhr = new XMLHttpRequest();
-                    fetch('/importExel', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ "uploadfile": String(uploadButton.value)})
-                })
-                .then(response => response.json())
-                .then(response => uploadItemResult(JSON.stringify(response)))
-                .then(response => console.log(JSON.stringify(response)))
+                fileInput.setAttribute("class", "form-control form-control-sm");
+                // Creates an XMLHttpRequest instance
+                const xhr = new XMLHttpRequest();
 
-                function uploadItemResult(response){
-                    location.reload();
+                // We set up the callback to handle the server response
+                xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // The file has been uploaded successfully
+                    console.log("File successfully uploaded!");
                 }
+                };
+
+                // We open the connection to the server
+                xhr.open("POST", "/importExel", true);
+
+                // We set the "Content-Type" header to "multipart/form-data"
+                xhr.setRequestHeader("Content-Type", "multipart/form-data");
+
+                // We create a FormData object and add the selected file
+                const formData = new FormData();
+                formData.append("file", fileInput.files);
+
+                console.log('FORM DATA:', formData);
+
+                // We send the request to the server with the send() method
+                xhr.send(formData)
             }
         }
     }

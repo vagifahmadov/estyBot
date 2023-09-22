@@ -13,6 +13,9 @@ from flask_mysqldb import MySQL
 from helper.methods import *
 import pandas as pd
 
+UPLOAD_FOLDER = '/upload'
+ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
+
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # app.config['UPLOAD_FOLDER'] = upload_folder
 app.secret_key = "etsybot"
@@ -21,8 +24,12 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'etsy'
 app.config['MYSQL_PASSWORD'] = '0ze2Qc]zb57YTPCi'
 app.config['MYSQL_DB'] = 'etsy'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 mysql = MySQL(app)
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/', methods=["GET"])
 def home():
@@ -227,15 +234,21 @@ def delete_proxy():
 # /importExel
 @app.route('/importExel', methods=["POST"])
 def import_exel():
-    # main variables
-    req = request.json
-    file_upload = req['uploadfile']
-    file_upload.replace("\\/", "/").encode().decode('unicode_escape')
-    print('\n\n\npath:\n', file_upload, '\n\n\n')
-    df = pd.read_excel(file_upload, sheet_name='Sheet1')
-    print(df)
+    result = False
+    if request.method == 'POST':
+        # check if the post request has the file part
+        print(f'files:{request.files}')
+        file = request.files['file']
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            result = True
+    # df = pd.read_excel(filename, sheet_name='Sheet1')
+    # print(df)
 
-    result = {'data': req['uploadfile']}
+    result = {'success': result}
     # id_item = req["ip"]
     # cursor = mysql.connection.cursor()
     # sql = f"DELETE FROM proxy_list WHERE `ip` = '{id_item}'"

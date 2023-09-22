@@ -14,7 +14,6 @@ from waitress import serve
 import json
 import pymongo
 
-
 def selenium_method(id_element, search_text, limit=None, proxy=None):
     # s = Service('./chromedriver/chromedriver')
     s = Service(executable_path=binary_path)
