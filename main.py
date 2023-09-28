@@ -11,10 +11,15 @@ import json
 from datetime import datetime
 from flask_mysqldb import MySQL
 from helper.methods import *
-import pandas as pd
+from pandas import *
+from werkzeug.utils import secure_filename
+import os
+import uuid
+import ipaddress
 
-UPLOAD_FOLDER = '/upload'
-ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
+
+UPLOAD_FOLDER = 'upload'
+ALLOWED_EXTENSIONS = {'xls', 'xlsx', 'py'}
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # app.config['UPLOAD_FOLDER'] = upload_folder
@@ -30,6 +35,14 @@ mysql = MySQL(app)
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def is_ipv4(string):
+    try:
+        ipaddress.IPv4Network(string)
+        return True
+    except ValueError:
+        return False
+
 
 @app.route('/', methods=["GET"])
 def home():
@@ -237,21 +250,28 @@ def import_exel():
     result = False
     if request.method == 'POST':
         # check if the post request has the file part
-        print(f'files:{request.files}')
-        file = request.files['file']
+        file = request.files.get('file')
+        print(f'files:\t{file.filename}')
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
         if file and allowed_file(file.filename):
+            type_file = str(file.filename).split(".")[-1]
+            file.filename = f'{uuid.uuid4().hex}.{type_file}'
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            result = True
-    # df = pd.read_excel(filename, sheet_name='Sheet1')
-    # print(df)
+            path = f"upload/{file.filename}"
+            # pandas
+            xls = ExcelFile(path)
+            df = xls.parse(xls.sheet_names[0])
+            ip_list = list(df['iplist'])
+            ip_list = list(map(lambda f: f if is_ipv4(f) else None, ip_list))
+            ip_list = list(filter(lambda f: f is not None, ip_list))
+            print(f'\n\n\n\n---------------\n{df.to_dict()}\t{ip_list}\n-----------------\n\n\n\n\n')
 
-    result = {'success': result}
-    # id_item = req["ip"]
-    # cursor = mysql.connection.cursor()
-    # sql = f"DELETE FROM proxy_list WHERE `ip` = '{id_item}'"
+    cursor = mysql.connection.cursor()
+    sql = (f"INSERT INTO `proxy_list` (`ip`) SELECT 'stuff for value1', 'stuff for value2' FROM DUAL WHERE NOT EXISTS (SELECT * FROM `table`"
+           f"WHERE `value1`='stuff for value1' AND `value2`='stuff for value2' LIMIT 1)")
+
     # cursor.execute(sql)
     # mysql.connection.commit()
     # cursor.execute("""SELECT `ip`, `desc` FROM `proxy_list`""")

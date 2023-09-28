@@ -369,9 +369,7 @@
     });
 
     function uploadExel(){
-        const fileInput = document.getElementById("upload");
-        
-        console.log("upload:\t", fileInput.value)
+        var fileInput = document.getElementById("upload");
         if(fileInput.value === ''){
             //if empty
             fileInput.setAttribute("class", "form-control is-invalid");
@@ -383,31 +381,21 @@
                 fileInput.setAttribute("class", "form-control is-invalid");
             }else{
                 fileInput.setAttribute("class", "form-control form-control-sm");
-                // Creates an XMLHttpRequest instance
-                const xhr = new XMLHttpRequest();
-
-                // We set up the callback to handle the server response
-                xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    // The file has been uploaded successfully
-                    console.log("File successfully uploaded!");
-                }
-                };
-
-                // We open the connection to the server
-                xhr.open("POST", "/importExel", true);
-
-                // We set the "Content-Type" header to "multipart/form-data"
-                xhr.setRequestHeader("Content-Type", "multipart/form-data");
-
-                // We create a FormData object and add the selected file
-                const formData = new FormData();
-                formData.append("file", fileInput.files);
-
-                console.log('FORM DATA:', formData);
-
-                // We send the request to the server with the send() method
-                xhr.send(formData)
+                var form_data = new FormData();
+                form_data.append('file', $('#upload').prop('files')[0]);
+                $(function() {
+                    $.ajax({
+                        type: 'POST',
+                        url:  '/importExel',
+                        data: form_data,
+                        contentType: false,
+                        cache: false,
+                        processData: false,
+                        success: function(data) {
+                            console.log('Success!');
+                        }
+                    })
+                });
             }
         }
     }
